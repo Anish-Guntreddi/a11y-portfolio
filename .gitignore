@@ -13,3 +13,7 @@ coverage
 
 # Generated demo artifacts (regenerate via pnpm --filter @a11y-portfolio/accesslens demo)
 packages/accesslens/examples/*.pdf
+
+# Playwright MCP scratch + screenshots
+.playwright-mcp/
+*-full.png

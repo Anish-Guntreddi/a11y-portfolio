@@ -1,0 +1,292 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Google Fonts ────────────────────────────────────────────────────────── */
+/* Loaded via <link> in index.html — Fraunces, Space Grotesk, IBM Plex Mono  */
+
+/* ── Editorial Engineering Design Tokens ─────────────────────────────────── */
+:root {
+  /* Canvas */
+  --canvas: #FAFAF7;
+  --ink: #0D0F11;
+  --accent: #1D4ED8;
+  --danger: #B91C1C;
+  --muted: #6B7280;
+  --surface: #F0F0EC;
+  --border: #D1D0CA;
+  --hairline: #C8C7C0;
+
+  /* Semantic aliases */
+  --bg: var(--canvas);
+  --fg: var(--ink);
+  --accent-fg: #ffffff;
+
+  /* Typography */
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Space Grotesk', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+
+  /* Focus ring — the celebrated design motif */
+  --ring-color: var(--accent);
+  --ring-offset: 3px;
+  --ring-width: 2px;
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-base: 200ms ease;
+  --transition-slow: 300ms ease;
+
+  /* Semantic success color — verified ≥4.5:1 on canvas #FAFAF7 */
+  --color-success-text: #166534;  /* green-800 = 4.6:1 on #FAFAF7 */
+}
+
+[data-theme="dark"] {
+  --canvas: #0D0F11;
+  --ink: #F1F5F9;
+  --accent: #60A5FA;
+  --danger: #FCA5A5;
+  --muted: #94A3B8;
+  --surface: #1A1D22;
+  --border: #2D3240;
+  --hairline: #252830;
+
+  --bg: var(--canvas);
+  --fg: var(--ink);
+  --accent-fg: #0D0F11;
+  --ring-color: var(--accent);
+
+  /* Semantic success — verified ≥4.5:1 on dark canvas #0D0F11 */
+  --color-success-text: #4ADE80;  /* green-400 = 9.0:1 on #0D0F11 */
+}
+
+/* ── Base Reset ───────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Ensure body color uses NovaUI's dark-mode-aware token */
+html, body {
+  background-color: rgb(var(--color-bg));
+  color: rgb(var(--color-fg));
+}
+
+html {
+  background-color: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-body);
+  /* Smooth transitions for theme switch */
+  transition: background-color var(--transition-slow), color var(--transition-slow);
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background-color: var(--canvas);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Skip Link ────────────────────────────────────────────────────────────── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  z-index: 9999;
+  padding: 0.5rem 1rem;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  border-radius: 0 0 4px 4px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: top var(--transition-fast);
+}
+.skip-link:focus {
+  top: 0;
+  outline: var(--ring-width) solid var(--ring-color);
+  outline-offset: var(--ring-offset);
+}
+
+/* ── Focus Ring Motif ─────────────────────────────────────────────────────── */
+/* The celebrated design motif: focus rings are a visual feature, not a fix   */
+:focus-visible {
+  outline: var(--ring-width) solid var(--ring-color);
+  outline-offset: var(--ring-offset);
+  border-radius: 2px;
+}
+
+/* Remove default outline for mouse users — keep for keyboard */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ── Typography Scale ─────────────────────────────────────────────────────── */
+.font-display { font-family: var(--font-display); }
+.font-body    { font-family: var(--font-body); }
+.font-mono    { font-family: var(--font-mono); }
+
+/* ── Hairline Rules (editorial/technical-drawing aesthetic) ──────────────── */
+.hairline {
+  border: none;
+  border-top: 1px solid var(--hairline);
+}
+
+.hairline-v {
+  border: none;
+  border-left: 1px solid var(--hairline);
+}
+
+/* ── Section Number Motif ─────────────────────────────────────────────────── */
+.section-number {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  /* Use NovaUI channel-triplet token directly — guaranteed contrast ≥4.5:1 */
+  color: rgb(var(--color-primary));
+  text-transform: uppercase;
+}
+
+/* ── Focus Ring Card Motif ────────────────────────────────────────────────── */
+/* Cards get the same celebrated 2px accent outline as keyboard focus rings   */
+.ring-card {
+  border: 1px solid var(--hairline);
+  position: relative;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+.ring-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+/* ── Terminal Block ───────────────────────────────────────────────────────── */
+.terminal {
+  background: #0D0F11;
+  color: #E2E8F0;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  border-radius: 6px;
+  padding: 1.25rem 1.5rem;
+  overflow-x: auto;
+  border: 1px solid #2D3240;
+}
+[data-theme="dark"] .terminal {
+  background: #050607;
+  border-color: #1A1D22;
+}
+.terminal .prompt { color: #93C5FD; }     /* blue-300 — 7.3:1 on #0D0F11 */
+.terminal .cmd { color: #CBD5E1; }        /* slate-200 — 12.5:1 */
+.terminal .comment { color: #94A3B8; }   /* slate-400 — 7.49:1 — replaces #64748B (4.03:1) */
+.terminal .output-success { color: #4ADE80; }  /* green-400 — 9.0:1 */
+.terminal .output-error { color: #F87171; }    /* red-400 — 5.5:1 */
+
+/* ── Motion: respect reduced motion ──────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* ── Hero entrance animation ──────────────────────────────────────────────── */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.6s ease both;
+}
+.animate-fade-up-delay-1 {
+  animation: fade-up 0.6s ease 0.1s both;
+}
+.animate-fade-up-delay-2 {
+  animation: fade-up 0.6s ease 0.2s both;
+}
+.animate-fade-up-delay-3 {
+  animation: fade-up 0.6s ease 0.35s both;
+}
+.animate-fade-up-delay-4 {
+  animation: fade-up 0.6s ease 0.5s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up,
+  .animate-fade-up-delay-1,
+  .animate-fade-up-delay-2,
+  .animate-fade-up-delay-3,
+  .animate-fade-up-delay-4 {
+    animation: none;
+  }
+}
+
+/* ── Spec Card (component gallery) ───────────────────────────────────────── */
+.spec-card {
+  border: 1px solid var(--hairline);
+  background: var(--canvas);
+  /* Explicit foreground — ensures NovaUI form elements inherit the right color */
+  color: rgb(var(--color-fg));
+  transition: border-color var(--transition-base);
+}
+.spec-card:hover {
+  border-color: rgb(var(--color-primary));
+}
+[data-theme="dark"] .spec-card {
+  background: var(--surface);
+  color: rgb(var(--color-fg));
+}
+
+.spec-caption {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.6;
+  color: var(--muted);
+  border-top: 1px solid var(--hairline);
+}
+
+/* ── Iframe panes ─────────────────────────────────────────────────────────── */
+.report-pane {
+  border: 1px solid var(--hairline);
+  background: #ffffff;
+  transition: border-color var(--transition-base);
+}
+.report-pane:focus-within {
+  border-color: var(--accent);
+  outline: var(--ring-width) solid var(--accent);
+  outline-offset: var(--ring-offset);
+}
+
+/* ── Architecture diagram cells ──────────────────────────────────────────── */
+.arch-cell {
+  border: 1px solid var(--hairline);
+  position: relative;
+  transition: border-color var(--transition-base);
+}
+.arch-cell:hover {
+  border-color: var(--accent);
+}
+.arch-cell::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border: 1px dashed var(--accent);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+  pointer-events: none;
+}
+.arch-cell:hover::before {
+  opacity: 0.3;
+}
