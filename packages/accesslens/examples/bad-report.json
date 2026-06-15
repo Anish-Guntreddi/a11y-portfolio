@@ -1,6 +1,6 @@
 {
   "url": "file:///Users/anishguntreddi/Documents/hciaccessibility/packages/accesslens/src/fixtures/bad.html",
-  "timestampIso": "2026-06-15T19:15:39.193Z",
+  "timestampIso": "2026-06-15T19:30:41.311Z",
   "findings": [
     {
       "ruleId": "color-contrast",
