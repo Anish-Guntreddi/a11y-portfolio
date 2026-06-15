@@ -13,6 +13,9 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:4173',
     trace: 'retain-on-failure',
+    // Settle entrance animations instantly so axe evaluates the final, visible
+    // state deterministically (not a transient mid-animation frame).
+    reducedMotion: 'reduce',
   },
   webServer: {
     command: 'pnpm preview --port 4173',
