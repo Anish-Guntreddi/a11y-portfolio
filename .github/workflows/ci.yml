@@ -20,7 +20,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm --filter @a11y-portfolio/novaui exec playwright install --with-deps chromium
       - name: Lint
         run: pnpm lint
       - name: Typecheck
