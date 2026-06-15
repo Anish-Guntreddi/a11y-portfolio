@@ -21,6 +21,10 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @a11y-portfolio/novaui exec playwright install --with-deps chromium
+      # Build the libraries first: the site (and cross-package types) resolve
+      # @a11y-portfolio/* from their built dist, so typecheck needs them present.
+      - name: Build
+        run: pnpm -r build
       - name: Lint
         run: pnpm lint
       - name: Typecheck
@@ -29,8 +33,6 @@ jobs:
         run: pnpm -r test
       - name: A11y / e2e tests
         run: pnpm --filter @a11y-portfolio/novaui test:e2e
-      - name: Build
-        run: pnpm -r build
 
   security:
     runs-on: ubuntu-latest
