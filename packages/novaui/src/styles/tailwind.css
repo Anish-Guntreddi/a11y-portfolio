@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Apply token colours to the document root so that:
+ *   1. axe-core can correctly compute background colour for contrast checks
+ *      (it traverses the DOM; the <html> background anchors the scan).
+ *   2. The body inherits the correct foreground colour.
+ *
+ * The `data-theme` attribute is set on <html> by ThemeProvider, so these
+ * rules respond to both light and dark themes automatically via tokens.css.
+ */
+html,
+body {
+  background-color: rgb(var(--color-bg));
+  color: rgb(var(--color-fg));
+}

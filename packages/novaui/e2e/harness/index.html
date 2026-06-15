@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NovaUI Harness</title>
+    <!--
+      No-FOUC theme script: runs before any paint.
+      Sets data-theme on <html> from localStorage (if present) or OS preference,
+      so the correct theme is applied before React mounts.
+      The ThemeProvider will read the same values and stay in sync.
+    -->
+    <script>
+      (function () {
+        var stored;
+        try { stored = localStorage.getItem('novaui-theme'); } catch (_) {}
+        if (stored === 'light' || stored === 'dark') {
+          document.documentElement.dataset.theme = stored;
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.documentElement.dataset.theme = 'dark';
+        } else {
+          document.documentElement.dataset.theme = 'light';
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>

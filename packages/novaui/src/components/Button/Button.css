@@ -1,0 +1,17 @@
+/*
+ * Mandatory focus indicator for NovaUI Button.
+ *
+ * This rule is NOT removable by consumer `className` prop because it is a
+ * dedicated CSS selector (not a Tailwind utility) and uses `outline`, which
+ * Tailwind's focus-visible utilities don't normally override once compiled.
+ *
+ * Keyed on `.nui-button` — always applied by the Button component before any
+ * consumer className — so it wins in cascade order over consumer utilities.
+ *
+ * :focus-visible ensures the ring only shows on keyboard navigation, not
+ * on mouse click, matching WAI-ARIA best practice.
+ */
+.nui-button:focus-visible {
+  outline: 2px solid rgb(var(--color-focus-ring));
+  outline-offset: 2px;
+}
