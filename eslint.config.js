@@ -4,7 +4,15 @@ import react from 'eslint-plugin-react';
 
 export default tseslint.config(
   {
-    ignores: ['**/dist/**', '**/storybook-static/**', '**/node_modules/**'],
+    ignores: [
+      '**/dist/**',
+      '**/storybook-static/**',
+      '**/node_modules/**',
+      '**/playwright-report/**',
+      '**/test-results/**',
+      '.remember/**',
+      'docs/**',
+    ],
   },
   ...tseslint.configs.recommended,
   {

@@ -6,3 +6,7 @@ test-results
 coverage
 *.tsbuildinfo
 .DS_Store
+
+# Session/agent scratch state — never commit
+.remember
+.claude/

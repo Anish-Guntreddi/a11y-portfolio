@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<!-- INTENTIONALLY INACCESSIBLE — accessibility test fixture for Phase 6 -->
+<!-- Planted issues:
+     1. Missing lang attribute on <html>         → html-has-lang
+     2. <img> with no alt attribute              → image-alt
+     3. <input> with no associated label         → label
+     4. Heading order jump: h1 → h4             → heading-order
+     5. Low-contrast text: #aaa on #fff          → color-contrast
+-->
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Inaccessible Demo Page</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #ffffff;
+      }
+      /* Issue 5: Low contrast — #aaa on #fff is approximately 2.32:1 (fails WCAG AA 4.5:1) */
+      .low-contrast {
+        color: #aaaaaa;
+        background-color: #ffffff;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <!-- Issue 4: heading order skips from h1 to h4 -->
+      <h1>Main Heading</h1>
+      <h4>Sub-section heading (skipped h2 and h3)</h4>
+
+      <!-- Issue 2: img with no alt -->
+      <img
+        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23ccc'/%3E%3C/svg%3E"
+        width="100"
+        height="100"
+      />
+
+      <!-- Issue 3: input with no label and no placeholder (placeholder can suppress the label rule) -->
+      <form>
+        <input type="text" name="username" />
+      </form>
+
+      <!-- Issue 5: low-contrast text block -->
+      <p class="low-contrast">
+        This text has insufficient contrast against its background.
+      </p>
+    </main>
+  </body>
+</html>
