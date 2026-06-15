@@ -6,6 +6,12 @@ import './tokens/tokens.css';
 export { Button } from './components/Button';
 export type { ButtonProps, ButtonVariant, ButtonSize } from './components/Button';
 
+export { FormField } from './components/FormField';
+export type { FormFieldProps } from './components/FormField';
+
+export { Input } from './components/Input';
+export type { InputProps } from './components/Input';
+
 // Theme
 export { ThemeProvider, useTheme } from './theme/ThemeProvider';
 

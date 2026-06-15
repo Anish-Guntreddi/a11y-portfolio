@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Button, ThemeProvider } from '../../src/index';
+import { Button, FormField, Input, ThemeProvider } from '../../src/index';
 import type { ButtonVariant, ButtonSize } from '../../src/index';
 
 /** Read `?theme=dark` from the URL for automated dark-theme e2e. */
@@ -91,6 +91,39 @@ function App() {
           >
             Hostile className
           </Button>
+        </section>
+
+        {/* Input / FormField section */}
+        <section aria-labelledby="inputs-heading" data-testid="inputs-section">
+          <h2 id="inputs-heading">Input &amp; FormField</h2>
+
+          {/* Normal field with label + description */}
+          <FormField label="Full name" description="Enter your first and last name">
+            <Input placeholder="Jane Doe" data-testid="normal-input" />
+          </FormField>
+
+          {/* Error field */}
+          <FormField label="Email address" error="Please enter a valid email">
+            <Input
+              type="email"
+              placeholder="you@example.com"
+              data-testid="error-input"
+            />
+          </FormField>
+
+          {/* Required field */}
+          <FormField label="Username" required>
+            <Input placeholder="your_handle" data-testid="required-input" />
+          </FormField>
+
+          {/* Hostile-className input — focus outline must still appear */}
+          <FormField label="Hostile input">
+            <Input
+              data-testid="hostile-focus-input"
+              className="outline-none focus-visible:outline-none"
+              placeholder="hostile"
+            />
+          </FormField>
         </section>
       </main>
     </div>
