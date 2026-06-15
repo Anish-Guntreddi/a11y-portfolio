@@ -11,10 +11,15 @@
       "types": "./dist/index.d.ts"
     }
   },
+  "files": [
+    "dist",
+    "src/fixtures"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "demo": "node dist/demo/run-demo.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.0.0",

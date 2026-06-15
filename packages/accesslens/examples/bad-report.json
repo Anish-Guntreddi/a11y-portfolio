@@ -1,0 +1,108 @@
+{
+  "url": "file:///Users/anishguntreddi/Documents/hciaccessibility/packages/accesslens/src/fixtures/bad.html",
+  "timestampIso": "2026-06-15T19:15:39.193Z",
+  "findings": [
+    {
+      "ruleId": "color-contrast",
+      "severity": "serious",
+      "message": "Elements must meet minimum color contrast ratio thresholds",
+      "remediation": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+      "targets": [
+        "p"
+      ],
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=axeAPI",
+      "html": "<p class=\"low-contrast\">\n        This text has insufficient contrast against its background.\n      </p>",
+      "source": "axe",
+      "category": "contrast"
+    },
+    {
+      "ruleId": "heading-order",
+      "severity": "moderate",
+      "message": "Heading levels should only increase by one",
+      "remediation": "Ensure the order of headings is semantically correct",
+      "targets": [
+        "h4"
+      ],
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/heading-order?application=axeAPI",
+      "html": "<h4>Sub-section heading (skipped h2 and h3)</h4>",
+      "source": "axe",
+      "category": "heading-structure"
+    },
+    {
+      "ruleId": "html-has-lang",
+      "severity": "serious",
+      "message": "<html> element must have a lang attribute",
+      "remediation": "Ensure every HTML document has a lang attribute",
+      "targets": [
+        "html"
+      ],
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/html-has-lang?application=axeAPI",
+      "html": "<html>",
+      "source": "axe"
+    },
+    {
+      "ruleId": "image-alt",
+      "severity": "critical",
+      "message": "Images must have alternative text",
+      "remediation": "Ensure <img> elements have alternative text or a role of none or presentation",
+      "targets": [
+        "img"
+      ],
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/image-alt?application=axeAPI",
+      "html": "<img src=\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23ccc'/%3E%3C/svg%3E\" width=\"100\" height=\"100\">",
+      "source": "axe",
+      "category": "alt-text"
+    },
+    {
+      "ruleId": "label",
+      "severity": "critical",
+      "message": "Form elements must have labels",
+      "remediation": "Ensure every form element has a label",
+      "targets": [
+        "input"
+      ],
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/label?application=axeAPI",
+      "html": "<input type=\"text\" name=\"username\">",
+      "source": "axe"
+    }
+  ],
+  "summary": {
+    "critical": 2,
+    "serious": 2,
+    "moderate": 1,
+    "minor": 0,
+    "total": 5
+  },
+  "keyboardChecklist": [
+    {
+      "id": "no-positive-tabindex",
+      "title": "No positive tabindex values",
+      "status": "pass",
+      "details": "No elements with tabindex > 0 were found."
+    },
+    {
+      "id": "interactive-focusable",
+      "title": "All interactive elements are keyboard-focusable",
+      "status": "pass",
+      "details": "No interactive elements were found with tabindex=\"-1\"."
+    },
+    {
+      "id": "skip-link",
+      "title": "Skip-to-content link present",
+      "status": "fail",
+      "details": "Add a skip-to-content link as the first focusable element to allow keyboard users to skip repeated navigation."
+    },
+    {
+      "id": "focus-visible",
+      "title": "Focus indicators are visible",
+      "status": "manual",
+      "details": "Manually verify that every interactive element shows a clearly visible focus indicator when navigated to with the Tab key. Check buttons, links, inputs, and custom controls."
+    },
+    {
+      "id": "no-keyboard-trap",
+      "title": "No keyboard traps",
+      "status": "manual",
+      "details": "Manually verify that keyboard focus can always move away from every component. Tab and Shift+Tab must not become trapped in any widget (unless it is a modal dialog that intentionally constrains focus)."
+    }
+  ]
+}
