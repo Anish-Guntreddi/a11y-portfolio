@@ -12,6 +12,13 @@ export type { FormFieldProps } from './components/FormField';
 export { Input } from './components/Input';
 export type { InputProps } from './components/Input';
 
+export { Modal } from './components/Modal';
+export type { ModalProps } from './components/Modal';
+
+// Hooks
+export { useFocusTrap } from './hooks/useFocusTrap';
+export type { UseFocusTrapOptions } from './hooks/useFocusTrap';
+
 // Theme
 export { ThemeProvider, useTheme } from './theme/ThemeProvider';
 

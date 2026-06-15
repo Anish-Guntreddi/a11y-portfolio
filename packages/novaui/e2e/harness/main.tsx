@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Button, FormField, Input, ThemeProvider } from '../../src/index';
+import { Button, FormField, Input, Modal, ThemeProvider } from '../../src/index';
 import type { ButtonVariant, ButtonSize } from '../../src/index';
 
 /** Read `?theme=dark` from the URL for automated dark-theme e2e. */
@@ -12,6 +12,39 @@ function getInitialTheme(): 'light' | 'dark' {
 
 const VARIANTS: ButtonVariant[] = ['primary', 'secondary', 'ghost', 'danger'];
 const SIZES: ButtonSize[] = ['sm', 'md', 'lg'];
+
+function ModalDemo() {
+  const [open, setOpen] = useState(false);
+  return (
+    <section aria-labelledby="modal-demo-heading" data-testid="modal-section">
+      <h2 id="modal-demo-heading">Modal / Dialog</h2>
+      <Button
+        data-testid="open-dialog-btn"
+        onClick={() => setOpen(true)}
+      >
+        Open dialog
+      </Button>
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Example dialog"
+        description="Fill in the fields below and confirm."
+      >
+        <FormField label="Your name">
+          <Input data-testid="modal-input" placeholder="Jane Doe" />
+        </FormField>
+        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+          <Button variant="secondary" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={() => setOpen(false)}>
+            Confirm
+          </Button>
+        </div>
+      </Modal>
+    </section>
+  );
+}
 
 function App() {
   const [count, setCount] = useState(0);
@@ -28,6 +61,10 @@ function App() {
     >
       <main>
         <h1>NovaUI Component Harness</h1>
+
+        {/* Modal demo section */}
+        <ModalDemo />
+
         {/* Counter section — used by activation e2e tests */}
         <section aria-labelledby="counter-heading">
           <h2 id="counter-heading">Activation test</h2>
