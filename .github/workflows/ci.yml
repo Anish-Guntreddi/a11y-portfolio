@@ -13,11 +13,11 @@ jobs:
   build-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 10
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: pnpm
@@ -37,25 +37,24 @@ jobs:
   security:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      # Static analysis runs on source BEFORE any dependency lifecycle scripts execute.
+      - name: Semgrep scan (SAST)
+        run: |
+          python3 -m pip install --quiet semgrep
+          semgrep scan --error --config p/typescript --config p/react \
+            --config p/owasp-top-ten --config p/secrets \
+            --exclude node_modules --exclude dist --exclude storybook-static
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 10
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      # Audit resolves the lockfile without running package lifecycle scripts.
+      - run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Audit shipping dependencies (blocking)
         run: pnpm audit --prod --audit-level low
       - name: Audit all dependencies (report only)
         run: pnpm audit || true
-      - name: Semgrep scan
-        uses: semgrep/semgrep-action@v1
-        with:
-          config: >-
-            p/typescript
-            p/react
-            p/owasp-top-ten
-            p/secrets
-        continue-on-error: false

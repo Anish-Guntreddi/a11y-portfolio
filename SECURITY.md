@@ -2,10 +2,17 @@
 
 This repository runs an automated security audit after every development phase:
 
-- **Semgrep** static analysis (`p/typescript`, `p/react`, `p/owasp-top-ten`).
+- **Semgrep** static analysis (`p/typescript`, `p/react`, `p/owasp-top-ten`, `p/secrets`).
 - **Dependency audit** (`pnpm audit`).
-- **Targeted checks**: no committed secrets; no unsanitized `dangerouslySetInnerHTML`;
-  Playwright/AccessLens used only against authorized targets.
+- **Targeted checks**: no committed secrets (grep heuristic backstop + Semgrep `p/secrets`);
+  no raw HTML injection (enforced by the `react/no-danger` ESLint rule at AST level).
+
+## Authorized-use enforcement (AccessLens)
+
+AccessLens is an authorized-use tool. It enforces this in code rather than by policy alone: the
+CLI accepts `file:` URLs and loopback hosts (`localhost`, `127.0.0.1`, `[::1]`) by default and
+**refuses any other origin** unless the operator passes `--allow-remote` together with an explicit
+`--i-am-authorized` attestation flag. This prevents accidental scanning of third-party sites.
 
 ## Shipping-code policy (blocking)
 
