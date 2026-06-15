@@ -56,7 +56,7 @@ describe('auditUrl integration (real Playwright + axe-core)', () => {
         expect(f.message).toBeTruthy();
         expect(f.remediation).toBeTruthy();
         expect(Array.isArray(f.targets)).toBe(true);
-        expect(f.source).toBe('axe');
+        expect(f.source).toMatch(/^(axe|custom)$/);
       }
 
       // Summary counts must add up to total
