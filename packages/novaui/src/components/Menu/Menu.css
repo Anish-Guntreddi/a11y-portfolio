@@ -1,0 +1,105 @@
+/*
+ * NovaUI Menu — tokenized styles.
+ *
+ * Focus indicator on menu items uses the same non-removable pattern as Button:
+ * `.nui-menu-item:focus-visible` is a dedicated CSS selector that consumer
+ * className cannot override, ensuring the focus ring is always visible on
+ * keyboard navigation.
+ *
+ * Both light and dark themes use the existing design tokens (--color-*), so
+ * color values automatically adapt to [data-theme="dark"].
+ */
+
+/* ── Wrapper ──────────────────────────────────────────────────────────────── */
+.nui-menu {
+  position: relative;
+  display: inline-block;
+}
+
+/* ── Trigger button ───────────────────────────────────────────────────────── */
+
+/*
+ * The trigger is rendered as a native <button class="nui-button nui-menu-trigger …">.
+ * The `nui-button` class guarantees the :focus-visible outline via Button.css;
+ * these additional rules just handle the disclosure chevron.
+ */
+.nui-menu-trigger[aria-expanded="true"] .nui-menu-chevron {
+  transform: rotate(180deg);
+}
+
+.nui-menu-chevron {
+  display: inline-block;
+  transition: transform 0.15s ease;
+  margin-left: 0.375rem;
+  font-size: 0.625rem;
+  line-height: 1;
+  /* A simple down-pointing triangle rendered as CSS border trick */
+}
+
+/* ── Dropdown panel ───────────────────────────────────────────────────────── */
+.nui-menu-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 50;
+  min-width: max(100%, 10rem);
+
+  background-color: rgb(var(--color-surface));
+  border: 1px solid rgb(var(--color-border) / 0.5);
+  border-radius: var(--radius-md);
+  box-shadow:
+    0 4px 6px -1px rgb(0 0 0 / 0.1),
+    0 2px 4px -2px rgb(0 0 0 / 0.1);
+
+  padding: 0.25rem 0;
+  margin: 0;
+  list-style: none;
+
+  /* Prevent the list from being accidentally clipped */
+  overflow: visible;
+}
+
+/* ── Menu items ───────────────────────────────────────────────────────────── */
+.nui-menu-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  text-align: left;
+  color: rgb(var(--color-fg));
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  /* Outline is controlled exclusively by :focus-visible below */
+  outline: none;
+}
+
+.nui-menu-item:hover:not([aria-disabled="true"]) {
+  background-color: rgb(var(--color-border) / 0.12);
+}
+
+.nui-menu-item:active:not([aria-disabled="true"]) {
+  background-color: rgb(var(--color-border) / 0.22);
+}
+
+/* ── Disabled items ───────────────────────────────────────────────────────── */
+.nui-menu-item[aria-disabled="true"] {
+  color: rgb(var(--color-muted-fg));
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ── Non-removable focus indicator ───────────────────────────────────────── */
+/*
+ * Keyed on `.nui-menu-item` — always applied by the Menu component before any
+ * consumer className. This wins in cascade order over consumer utilities, making
+ * the focus ring non-removable.
+ */
+.nui-menu-item:focus-visible {
+  outline: 2px solid rgb(var(--color-focus-ring));
+  outline-offset: -2px;
+}

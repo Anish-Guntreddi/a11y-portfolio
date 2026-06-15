@@ -15,9 +15,15 @@ export type { InputProps } from './components/Input';
 export { Modal } from './components/Modal';
 export type { ModalProps } from './components/Modal';
 
+export { Menu } from './components/Menu';
+export type { MenuProps, MenuItem } from './components/Menu';
+
 // Hooks
 export { useFocusTrap } from './hooks/useFocusTrap';
 export type { UseFocusTrapOptions } from './hooks/useFocusTrap';
+
+export { useRovingTabindex } from './hooks/useRovingTabindex';
+export type { UseRovingTabindexOptions, UseRovingTabindexReturn } from './hooks/useRovingTabindex';
 
 // Theme
 export { ThemeProvider, useTheme } from './theme/ThemeProvider';

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Button, FormField, Input, Modal, ThemeProvider } from '../../src/index';
-import type { ButtonVariant, ButtonSize } from '../../src/index';
+import { Button, FormField, Input, Modal, Menu, ThemeProvider } from '../../src/index';
+import type { ButtonVariant, ButtonSize, MenuItem } from '../../src/index';
 
 /** Read `?theme=dark` from the URL for automated dark-theme e2e. */
 function getInitialTheme(): 'light' | 'dark' {
@@ -46,6 +46,47 @@ function ModalDemo() {
   );
 }
 
+function MenuDemo() {
+  const [selected, setSelected] = useState<string>('');
+
+  const menuItems: MenuItem[] = [
+    {
+      id: 'item-edit',
+      label: 'Edit',
+      onSelect: () => setSelected('Edit'),
+    },
+    {
+      id: 'item-duplicate',
+      label: 'Duplicate',
+      onSelect: () => setSelected('Duplicate'),
+    },
+    {
+      id: 'item-archive',
+      label: 'Archive',
+      onSelect: () => setSelected('Archive'),
+      disabled: true,
+    },
+    {
+      id: 'item-delete',
+      label: 'Delete',
+      onSelect: () => setSelected('Delete'),
+    },
+  ];
+
+  return (
+    <section aria-labelledby="menu-demo-heading" data-testid="menu-section">
+      <h2 id="menu-demo-heading">Menu Button</h2>
+      <Menu
+        label="Actions"
+        items={menuItems}
+      />
+      {selected && (
+        <p data-testid="menu-selected">Selected: {selected}</p>
+      )}
+    </section>
+  );
+}
+
 function App() {
   const [count, setCount] = useState(0);
 
@@ -64,6 +105,9 @@ function App() {
 
         {/* Modal demo section */}
         <ModalDemo />
+
+        {/* Menu demo section */}
+        <MenuDemo />
 
         {/* Counter section — used by activation e2e tests */}
         <section aria-labelledby="counter-heading">
