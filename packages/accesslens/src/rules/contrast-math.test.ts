@@ -1,19 +1,35 @@
 import { describe, expect, it } from 'vitest';
-import { parseRgb, contrastRatio, isLargeText } from './contrast-math.js';
+import { parseRgb, contrastRatio, compositeOver, isLargeText } from './contrast-math.js';
 
 describe('parseRgb', () => {
   it('parses rgb() strings', () => {
-    expect(parseRgb('rgb(0, 0, 0)')).toEqual({ r: 0, g: 0, b: 0 });
-    expect(parseRgb('rgb(255, 255, 255)')).toEqual({ r: 255, g: 255, b: 255 });
+    expect(parseRgb('rgb(0, 0, 0)')).toEqual({ r: 0, g: 0, b: 0, a: 1 });
+    expect(parseRgb('rgb(255, 255, 255)')).toEqual({ r: 255, g: 255, b: 255, a: 1 });
   });
 
-  it('parses rgba() strings (ignores alpha)', () => {
-    expect(parseRgb('rgba(170, 170, 170, 1)')).toEqual({ r: 170, g: 170, b: 170 });
-    expect(parseRgb('rgba(0, 0, 0, 0.5)')).toEqual({ r: 0, g: 0, b: 0 });
+  it('parses rgba() strings (preserves alpha)', () => {
+    expect(parseRgb('rgba(170, 170, 170, 1)')).toEqual({ r: 170, g: 170, b: 170, a: 1 });
+    expect(parseRgb('rgba(0, 0, 0, 0.5)')).toEqual({ r: 0, g: 0, b: 0, a: 0.5 });
   });
 
-  it('throws on unparseable input', () => {
+  it('parses CSS Color-4 space-separated rgb(r g b)', () => {
+    expect(parseRgb('rgb(1 2 3)')).toEqual({ r: 1, g: 2, b: 3, a: 1 });
+  });
+
+  it('parses CSS Color-4 rgb(r g b / a)', () => {
+    expect(parseRgb('rgb(1 2 3 / 0.5)')).toEqual({ r: 1, g: 2, b: 3, a: 0.5 });
+  });
+
+  it('parses transparent keyword', () => {
+    expect(parseRgb('transparent')).toEqual({ r: 0, g: 0, b: 0, a: 0 });
+  });
+
+  it('throws on unparseable input (currentColor)', () => {
     expect(() => parseRgb('currentColor')).toThrow(/Cannot parse colour/);
+  });
+
+  it('throws on unparseable input (inherit)', () => {
+    expect(() => parseRgb('inherit')).toThrow(/Cannot parse colour/);
   });
 });
 
@@ -51,6 +67,52 @@ describe('contrastRatio', () => {
     // Same as black / white
     const ratio = contrastRatio('rgba(0,0,0,1)', 'rgba(255,255,255,1)');
     expect(ratio).toBeCloseTo(21, 0);
+  });
+});
+
+describe('compositeOver', () => {
+  it('opaque over opaque returns fg unchanged', () => {
+    const fg = { r: 100, g: 100, b: 100, a: 1 };
+    const bg = { r: 255, g: 255, b: 255, a: 1 };
+    const result = compositeOver(fg, bg);
+    expect(result.r).toBeCloseTo(100, 0);
+    expect(result.g).toBeCloseTo(100, 0);
+    expect(result.b).toBeCloseTo(100, 0);
+    expect(result.a).toBeCloseTo(1, 5);
+  });
+
+  it('transparent fg leaves bg colour', () => {
+    const fg = { r: 0, g: 0, b: 0, a: 0 };
+    const bg = { r: 255, g: 255, b: 255, a: 1 };
+    const result = compositeOver(fg, bg);
+    expect(result.r).toBeCloseTo(255, 0);
+    expect(result.g).toBeCloseTo(255, 0);
+    expect(result.b).toBeCloseTo(255, 0);
+  });
+
+  it('50% black over white gives grey', () => {
+    const fg = { r: 0, g: 0, b: 0, a: 0.5 };
+    const bg = { r: 255, g: 255, b: 255, a: 1 };
+    const result = compositeOver(fg, bg);
+    expect(result.r).toBeCloseTo(127.5, 0);
+    expect(result.a).toBeCloseTo(1, 5);
+  });
+});
+
+describe('contrastRatio — alpha handling', () => {
+  it('near-transparent colour (a < 0.1) throws so caller can skip', () => {
+    expect(() => contrastRatio('rgba(0,0,0,0.05)', 'rgb(255,255,255)')).toThrow();
+  });
+
+  it('transparent keyword throws so caller can skip', () => {
+    expect(() => contrastRatio('transparent', 'rgb(255,255,255)')).toThrow();
+  });
+
+  it('semi-transparent 50% black on white is composited (does not throw)', () => {
+    // rgba(0,0,0,0.5) composited over white → approx rgb(128,128,128) → ~3.95:1
+    const ratio = contrastRatio('rgba(0,0,0,0.5)', 'rgb(255,255,255)');
+    expect(ratio).toBeGreaterThan(1);
+    expect(ratio).toBeLessThan(21);
   });
 });
 

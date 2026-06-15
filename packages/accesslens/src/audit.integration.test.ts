@@ -22,6 +22,11 @@ function chromiumInstalled(): boolean {
   }
 }
 
+/** Helper: count findings with a given ruleId. */
+function countById(findings: { ruleId: string }[], ruleId: string): number {
+  return findings.filter((f) => f.ruleId === ruleId).length;
+}
+
 describe('auditUrl integration (real Playwright + axe-core)', () => {
   it(
     'detects expected violations on bad.html',
@@ -81,6 +86,49 @@ describe('auditUrl integration (real Playwright + axe-core)', () => {
 
       expect(result.summary.total).toBe(0);
       expect(result.findings).toHaveLength(0);
+    },
+  );
+
+  it(
+    'dedup: auditUrl does not double-count contrast/alt/heading issues on bad.html',
+    { timeout: 60_000 },
+    async () => {
+      if (!chromiumInstalled()) {
+        console.warn(
+          'Chromium not installed — run `pnpm exec playwright install chromium` then re-run tests.',
+        );
+        return;
+      }
+
+      const url = pathToFileURL(BAD_HTML_PATH).href;
+      const result = await auditUrl(url);
+
+      // Each overlapping category (contrast, alt-text, heading-structure) must
+      // appear AT MOST ONCE per target — no same-category finding duplicated.
+      const categories = new Map<string, Set<string>>();
+      for (const f of result.findings) {
+        if (!f.category) continue;
+        if (!categories.has(f.category)) categories.set(f.category, new Set());
+        const firstTarget = f.targets[0] ?? '__page__';
+        const key = firstTarget.trim().toLowerCase();
+        const seen = categories.get(f.category)!;
+        expect(seen.has(key), `Duplicate (${f.category}, ${key}) found in deduped output`).toBe(false);
+        seen.add(key);
+      }
+
+      // The custom rule-contrast and rule-img-alt should NOT appear since axe
+      // covers those on bad.html (they were deduped).
+      expect(countById(result.findings, 'rule-contrast')).toBe(0);
+      expect(countById(result.findings, 'rule-img-alt')).toBe(0);
+
+      // The axe versions SHOULD appear.
+      expect(countById(result.findings, 'color-contrast')).toBeGreaterThanOrEqual(1);
+      expect(countById(result.findings, 'image-alt')).toBeGreaterThanOrEqual(1);
+
+      // Summary total must equal the actual findings count (no double-count).
+      const { critical, serious, moderate, minor, total } = result.summary;
+      expect(critical + serious + moderate + minor).toBe(total);
+      expect(total).toBe(result.findings.length);
     },
   );
 });

@@ -1,4 +1,4 @@
-import type { DomSnapshot } from '../snapshot.js';
+import { UNRESOLVED_BACKGROUND, type DomSnapshot } from '../snapshot.js';
 import type { Finding } from '../types.js';
 import { contrastRatio, isLargeText } from './contrast-math.js';
 
@@ -11,16 +11,24 @@ import { contrastRatio, isLargeText } from './contrast-math.js';
  *   - Normal text: minimum 4.5
  *
  * Findings are severity 'serious'.
+ *
+ * Nodes are skipped when:
+ *   - backgroundColor is UNRESOLVED_BACKGROUND (ancestor has background-image)
+ *   - Either colour is unparseable (e.g. "currentColor")
+ *   - Either colour is near-transparent (contrastRatio throws)
  */
 export function checkContrast(snapshot: DomSnapshot): Finding[] {
   const findings: Finding[] = [];
 
   for (const node of snapshot.texts) {
+    // Skip nodes where background cannot be resolved (e.g. background-image ancestor)
+    if (node.backgroundColor === UNRESOLVED_BACKGROUND) continue;
+
     let ratio: number;
     try {
       ratio = contrastRatio(node.color, node.backgroundColor);
     } catch {
-      // Unparseable colour (e.g. "currentColor") — skip rather than false-positive
+      // Unparseable or near-transparent colour — skip rather than false-positive
       continue;
     }
 

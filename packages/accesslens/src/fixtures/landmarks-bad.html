@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Landmarks Bad</title>
+    <style>
+      body { font-family: Arial, sans-serif; color: #222; background: #fff; }
+    </style>
+  </head>
+  <body>
+    <!-- Two navs with no accessible names — triggers rule-landmark-unique-names -->
+    <nav>
+      <ul><li><a href="/">Home</a></li></ul>
+    </nav>
+    <nav>
+      <ul><li><a href="/about">About</a></li></ul>
+    </nav>
+
+    <!-- No <main> element — triggers rule-landmark-main -->
+    <div>
+      <h1>Page Title</h1>
+      <p>Content here.</p>
+
+      <!-- Invalid role "buton" — triggers rule-aria-valid-role -->
+      <span role="buton">Click me</span>
+
+      <!-- aria-hidden on focusable element — triggers rule-aria-hidden-focusable -->
+      <a href="/hidden" aria-hidden="true">Hidden link</a>
+
+      <!-- Positive tabindex — triggers no-positive-tabindex checklist FAIL -->
+      <button type="button" tabindex="3">Button with positive tabindex</button>
+    </div>
+    <footer>
+      <p>&copy; 2026 Demo</p>
+    </footer>
+  </body>
+</html>

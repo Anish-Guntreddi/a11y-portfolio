@@ -68,4 +68,39 @@ describe('checkAltText', () => {
   it('returns empty array for snapshot with no images', () => {
     expect(checkAltText(makeSnapshot([]))).toHaveLength(0);
   });
+
+  it('flags input[type="image"] with no alt attribute', () => {
+    const snapshot = makeSnapshot([
+      img({ selector: 'body > form > input', hasAltAttr: false, alt: null }),
+    ]);
+    const findings = checkAltText(snapshot);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].ruleId).toBe('rule-img-alt');
+    expect(findings[0].severity).toBe('critical');
+    expect(findings[0].targets).toEqual(['body > form > input']);
+  });
+
+  it('does NOT flag input[type="image"] with alt=""', () => {
+    const snapshot = makeSnapshot([
+      img({ selector: 'body > form > input', hasAltAttr: true, alt: '' }),
+    ]);
+    expect(checkAltText(snapshot)).toHaveLength(0);
+  });
+
+  it('flags <area> with no alt attribute', () => {
+    const snapshot = makeSnapshot([
+      img({ selector: 'body > map > area', hasAltAttr: false, alt: null }),
+    ]);
+    const findings = checkAltText(snapshot);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].ruleId).toBe('rule-img-alt');
+    expect(findings[0].targets).toEqual(['body > map > area']);
+  });
+
+  it('does NOT flag <area> with alt=""', () => {
+    const snapshot = makeSnapshot([
+      img({ selector: 'body > map > area', hasAltAttr: true, alt: '' }),
+    ]);
+    expect(checkAltText(snapshot)).toHaveLength(0);
+  });
 });

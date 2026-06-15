@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { checkContrast } from './contrast.js';
-import type { DomSnapshot, TextNode } from '../snapshot.js';
+import { UNRESOLVED_BACKGROUND, type DomSnapshot, type TextNode } from '../snapshot.js';
 
 function makeSnapshot(texts: TextNode[]): DomSnapshot {
   return { images: [], headings: [], texts };
@@ -105,5 +105,22 @@ describe('checkContrast', () => {
       }),
     ]);
     expect(checkContrast(snapshot)).toHaveLength(0);
+  });
+
+  it('skips nodes with UNRESOLVED_BACKGROUND (ancestor has background-image)', () => {
+    const snapshot = makeSnapshot([
+      node({ color: 'rgb(170,170,170)', backgroundColor: UNRESOLVED_BACKGROUND }),
+    ]);
+    // Would fail contrast if background were white, but must be skipped entirely
+    expect(checkContrast(snapshot)).toHaveLength(0);
+  });
+
+  it('still flags low-contrast text when background resolves to white (canvas default)', () => {
+    // Simulates bad.html: #aaa text with no ancestor bg → falls back to white canvas
+    const snapshot = makeSnapshot([
+      node({ color: 'rgb(170,170,170)', backgroundColor: 'rgb(255,255,255)' }),
+    ]);
+    expect(checkContrast(snapshot)).toHaveLength(1);
+    expect(checkContrast(snapshot)[0].ruleId).toBe('rule-contrast');
   });
 });

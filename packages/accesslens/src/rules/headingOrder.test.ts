@@ -76,4 +76,37 @@ describe('checkHeadingOrder', () => {
     const moderate = findings.filter((f) => f.severity === 'moderate');
     expect(moderate).toHaveLength(1);
   });
+
+  describe('ARIA headings (role="heading" + aria-level)', () => {
+    it('no-h1 is detected when only an ARIA h1 is absent and native headings start at h2', () => {
+      // Simulates a snapshot where headings include an ARIA-heading at level 2 but no h1
+      const headings: HeadingNode[] = [
+        { level: 2, text: 'Section', selector: 'body > div:nth-of-type(1)' },
+      ];
+      const findings = checkHeadingOrder(makeSnapshot(headings));
+      expect(findings.some((f) => f.severity === 'serious' && f.message.includes('no h1'))).toBe(true);
+    });
+
+    it('ARIA heading at level 1 satisfies the no-h1 check', () => {
+      // An element with role="heading" aria-level="1" captured as level:1 in the snapshot
+      const headings: HeadingNode[] = [
+        { level: 1, text: 'ARIA Heading', selector: 'body > div:nth-of-type(1)' },
+        { level: 2, text: 'Section', selector: 'body > div:nth-of-type(2)' },
+      ];
+      const findings = checkHeadingOrder(makeSnapshot(headings));
+      expect(findings.filter((f) => f.severity === 'serious')).toHaveLength(0);
+    });
+
+    it('level jump is detected using ARIA headings in document order', () => {
+      // ARIA h1 followed by ARIA h3 — jump of 2
+      const headings: HeadingNode[] = [
+        { level: 1, text: 'Top', selector: 'body > div:nth-of-type(1)' },
+        { level: 3, text: 'Sub', selector: 'body > div:nth-of-type(2)' },
+      ];
+      const findings = checkHeadingOrder(makeSnapshot(headings));
+      const jump = findings.find((f) => f.severity === 'moderate');
+      expect(jump).toBeDefined();
+      expect(jump?.message).toContain('h3');
+    });
+  });
 });
