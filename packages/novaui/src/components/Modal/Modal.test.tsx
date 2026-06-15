@@ -82,7 +82,8 @@ describe('Modal — focus', () => {
     expect(dialog.contains(document.activeElement)).toBe(true);
   });
 
-  it('focus returns to the trigger button after close', async () => {
+  // M5: Assert EXACT trigger element is focused, not just "not body".
+  it('focus returns to the EXACT trigger button after close', async () => {
     function Wrapper() {
       const [open, setOpen] = React.useState(false);
       return (
@@ -100,18 +101,96 @@ describe('Modal — focus', () => {
 
     const trigger = screen.getByTestId('trigger');
 
-    // Click the trigger — userEvent focuses it during the click, then the
-    // click handler fires opening the modal.
+    // Click the trigger so it receives focus before opening the modal.
     await user.click(trigger);
     expect(screen.getByRole('dialog')).toBeInTheDocument();
 
-    // Close via the close button
+    // Close via the close button.
     await user.click(screen.getByRole('button', { name: 'Close' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
-    // Focus should be back on the trigger (or at minimum inside the document, not body)
-    // In jsdom, focus restoration lands on the trigger if it was focused before open.
-    expect(document.activeElement).not.toBe(document.body);
+    // M5: Focus MUST return to the exact trigger, not just "not body".
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  // M5: Opener removed from DOM before close — focus falls back safely (no throw, no body crash).
+  it('focus restore falls back gracefully when opener is removed before close', async () => {
+    function Wrapper() {
+      const [open, setOpen] = React.useState(false);
+      const [showTrigger, setShowTrigger] = React.useState(true);
+      return (
+        <>
+          {showTrigger && (
+            <button
+              data-testid="trigger"
+              onClick={() => {
+                setOpen(true);
+                // Remove the trigger from DOM immediately after opening.
+                setShowTrigger(false);
+              }}
+            >
+              Open
+            </button>
+          )}
+          <Modal open={open} onClose={() => setOpen(false)} title="Test" />
+        </>
+      );
+    }
+
+    const user = userEvent.setup();
+    render(<Wrapper />);
+
+    // Open modal — trigger removes itself simultaneously.
+    await user.click(screen.getByTestId('trigger'));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.queryByTestId('trigger')).not.toBeInTheDocument();
+
+    // Close via Escape — should not throw, focus lands on body or another safe element.
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    // No assertion on activeElement — just assert no exception was thrown and the modal is gone.
+  });
+
+  // M5: Opener disabled before close — focus falls back safely.
+  it('focus restore falls back gracefully when opener is disabled before close', async () => {
+    function Wrapper() {
+      const [open, setOpen] = React.useState(false);
+      const [triggerDisabled, setTriggerDisabled] = React.useState(false);
+      return (
+        <>
+          <button
+            data-testid="trigger"
+            disabled={triggerDisabled}
+            onClick={() => setOpen(true)}
+          >
+            Open
+          </button>
+          <button
+            data-testid="disable-trigger"
+            onClick={() => setTriggerDisabled(true)}
+          >
+            Disable trigger
+          </button>
+          <Modal open={open} onClose={() => setOpen(false)} title="Test" />
+        </>
+      );
+    }
+
+    const user = userEvent.setup();
+    render(<Wrapper />);
+
+    // Open modal.
+    await user.click(screen.getByTestId('trigger'));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    // Disable the trigger while modal is open.
+    await user.click(screen.getByTestId('disable-trigger'));
+    expect(screen.getByTestId('trigger')).toBeDisabled();
+
+    // Close — focus should not throw and should not land on the disabled button.
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(document.activeElement).not.toBe(screen.getByTestId('trigger'));
   });
 });
 
@@ -145,29 +224,29 @@ describe('Modal — close interactions', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it('backdrop click fires onClose when closeOnBackdropClick=true (default)', async () => {
+  it('backdrop pointer-down fires onClose when closeOnBackdropClick=true (default)', async () => {
     const onClose = vi.fn();
     // Render with open so backdrop is in DOM
     renderModal({ onClose, closeOnBackdropClick: true });
 
-    // Simulate mousedown on the backdrop element (first div with .nui-modal-backdrop)
+    // Simulate pointerdown on the backdrop element (first div with .nui-modal-backdrop)
     const backdrop = document.querySelector('.nui-modal-backdrop') as HTMLElement;
     expect(backdrop).not.toBeNull();
 
-    // Trigger mousedown on the backdrop itself
-    const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
+    // Trigger pointerdown on the backdrop itself
+    const event = new PointerEvent('pointerdown', { bubbles: true, cancelable: true });
     Object.defineProperty(event, 'target', { value: backdrop });
     backdrop.dispatchEvent(event);
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('backdrop click does NOT fire onClose when closeOnBackdropClick=false', async () => {
+  it('backdrop pointer-down does NOT fire onClose when closeOnBackdropClick=false', async () => {
     const onClose = vi.fn();
     renderModal({ onClose, closeOnBackdropClick: false });
 
     const backdrop = document.querySelector('.nui-modal-backdrop') as HTMLElement;
-    const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
+    const event = new PointerEvent('pointerdown', { bubbles: true, cancelable: true });
     Object.defineProperty(event, 'target', { value: backdrop });
     backdrop.dispatchEvent(event);
 

@@ -33,8 +33,12 @@ export interface ModalProps {
  * - Renders via `createPortal` to `document.body` only when `open` is true.
  * - `role="dialog"`, `aria-modal="true"`, labelled by the rendered title.
  * - Uses `useFocusTrap` to trap and restore focus.
- * - Esc closes; backdrop click closes (configurable); clicks inside do NOT close.
+ * - Esc closes; backdrop pointer-down closes (configurable); events inside do NOT close.
  * - Locks body scroll while open; restores on close.
+ * - M2(b): Sets `inert` + `aria-hidden="true"` on every sibling body child while open
+ *   so screen readers and keyboards cannot reach background content.
+ *   Handled inside `useFocusTrap` (makeBackgroundInert:true) so that the inertness
+ *   is removed atomically before focus is restored to the opener on close.
  */
 export function Modal({
   open,
@@ -49,7 +53,9 @@ export function Modal({
   const descriptionId = useId();
 
   // Attach the focus trap to the dialog element.
-  const dialogRef = useFocusTrap(open, { initialFocus });
+  // makeBackgroundInert: true makes body siblings inert while open and removes
+  // them before restoring focus, so the opener is always reachable on close.
+  const dialogRef = useFocusTrap(open, { initialFocus, makeBackgroundInert: true });
 
   // ── Body scroll lock ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -81,11 +87,12 @@ export function Modal({
     };
   }, [open, onClose]);
 
-  // ── Backdrop click handler ────────────────────────────────────────────────
+  // ── M4: Backdrop pointer-down handler ────────────────────────────────────
+  // Using PointerEvent so touch and pen also trigger close, not just mouse.
   const backdropRef = useRef<HTMLDivElement | null>(null);
 
-  function handleBackdropPointerDown(event: React.MouseEvent<HTMLDivElement>) {
-    // Only close when the click target is the backdrop itself, not children.
+  function handleBackdropPointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    // Only close when the pointer-down target is the backdrop itself, not children.
     if (closeOnBackdropClick && event.target === backdropRef.current) {
       onClose();
     }
@@ -98,10 +105,7 @@ export function Modal({
     <div
       ref={backdropRef}
       className="nui-modal-backdrop"
-      onMouseDown={handleBackdropPointerDown}
-      // Prevent the backdrop click handler from triggering via bubbled events
-      // when the user clicks inside the dialog.
-      aria-hidden={undefined}
+      onPointerDown={handleBackdropPointerDown}
     >
       {/* The dialog element — ref wired to useFocusTrap */}
       <div
@@ -111,9 +115,9 @@ export function Modal({
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
         className="nui-modal-dialog"
-        // Stop mouse-down propagation so backdrop handler never fires for
-        // clicks that originate inside the dialog.
-        onMouseDown={(e) => e.stopPropagation()}
+        // Stop pointer-down propagation so backdrop handler never fires for
+        // pointer events that originate inside the dialog.
+        onPointerDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="nui-modal-header">

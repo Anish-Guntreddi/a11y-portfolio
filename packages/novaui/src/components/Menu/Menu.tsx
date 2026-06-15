@@ -48,6 +48,8 @@ export function Menu({ label, items, className }: MenuProps) {
 
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+  // N2: track pending rAF so it can be cancelled on unmount or re-invocation.
+  const focusRafRef = useRef<number | null>(null);
 
   // Indices of disabled items — these are skipped by roving tabindex.
   const disabledIndices = items.reduce<number[]>((acc, item, i) => {
@@ -91,11 +93,31 @@ export function Menu({ label, items, className }: MenuProps) {
   const closeMenu = useCallback((returnFocus = true) => {
     setOpen(false);
     if (returnFocus) {
+      // N2: Cancel any previously scheduled focus before scheduling a new one.
+      if (focusRafRef.current !== null) {
+        cancelAnimationFrame(focusRafRef.current);
+        focusRafRef.current = null;
+      }
       // Return focus to the trigger after the menu unmounts.
-      requestAnimationFrame(() => {
-        triggerRef.current?.focus();
+      focusRafRef.current = requestAnimationFrame(() => {
+        focusRafRef.current = null;
+        const trigger = triggerRef.current;
+        if (trigger && document.contains(trigger)) {
+          trigger.focus();
+        }
+        // If trigger is gone, focus naturally stays where it is (no body fallback).
       });
     }
+  }, []);
+
+  // N2: Cancel any pending rAF focus on unmount to avoid focusing a detached node.
+  useEffect(() => {
+    return () => {
+      if (focusRafRef.current !== null) {
+        cancelAnimationFrame(focusRafRef.current);
+        focusRafRef.current = null;
+      }
+    };
   }, []);
 
   // ── Outside-click / outside-focus handler ────────────────────────────────

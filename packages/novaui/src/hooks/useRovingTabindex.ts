@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, useEffect } from 'react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -9,6 +9,7 @@ export interface UseRovingTabindexOptions {
   count: number;
   /**
    * Initially active index. Defaults to 0.
+   * If this index is disabled, the hook advances to the next enabled item.
    */
   initialIndex?: number;
   /**
@@ -50,6 +51,10 @@ export interface UseRovingTabindexReturn {
  * - Navigation automatically calls `.focus()` on the newly active element.
  * - Disabled indices are skipped.
  *
+ * N1: `initialIndex` is clamped to the first enabled item if it resolves to a
+ * disabled index. When `count` or `disabledIndices` change, the active index
+ * is re-validated so tabindex=0 always sits on a valid, enabled, in-range item.
+ *
  * Generic / SSR-safe: no DOM access during render.
  */
 export function useRovingTabindex({
@@ -60,7 +65,42 @@ export function useRovingTabindex({
   // Refs array — populated by the ref callback returned in getItemProps.
   const itemRefs = useRef<Array<HTMLElement | null>>([]);
 
-  const [activeIndex, setActiveIndexState] = useState<number>(initialIndex);
+  // N1: Compute first enabled index at init time, respecting initialIndex.
+  function resolveInitialIndex(
+    preferred: number,
+    total: number,
+    disabled: number[],
+  ): number {
+    // Try the preferred index first if it's enabled and in range.
+    if (preferred >= 0 && preferred < total && !disabled.includes(preferred)) {
+      return preferred;
+    }
+    // Walk forward from preferred to find first enabled item.
+    for (let i = 0; i < total; i++) {
+      const idx = (preferred + i) % total;
+      if (!disabled.includes(idx)) return idx;
+    }
+    // All disabled — return preferred clamped to range.
+    return Math.min(preferred, total - 1);
+  }
+
+  const [activeIndex, setActiveIndexState] = useState<number>(() =>
+    resolveInitialIndex(initialIndex, count, disabledIndices),
+  );
+
+  // N1: Re-clamp active index whenever count or disabledIndices change.
+  useEffect(() => {
+    setActiveIndexState((prev) => {
+      // If previous index is still valid and enabled, keep it.
+      if (prev >= 0 && prev < count && !disabledIndices.includes(prev)) {
+        return prev;
+      }
+      // Otherwise, find the nearest valid enabled index.
+      return resolveInitialIndex(prev, count, disabledIndices);
+    });
+  // We intentionally stringify disabledIndices for stable comparison
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [count, JSON.stringify(disabledIndices)]);
 
   // Find the next enabled index, wrapping around.
   const findNext = useCallback(
@@ -95,14 +135,33 @@ export function useRovingTabindex({
     itemRefs.current[index]?.focus();
   }, []);
 
+  // Track a "cancelled" flag so that if the component unmounts before the
+  // microtask fires, we don't focus a detached node.
+  const cancelledRef = useRef(false);
+
   const setActiveIndex = useCallback(
     (index: number) => {
       setActiveIndexState(index);
       // Focus is called in a microtask so state has settled.
-      Promise.resolve().then(() => focusItem(index));
+      // We guard against calling focus on a detached element (e.g. after unmount).
+      Promise.resolve().then(() => {
+        if (cancelledRef.current) return;
+        const el = itemRefs.current[index];
+        if (el && (typeof document === 'undefined' || document.contains(el))) {
+          el.focus();
+        }
+      });
     },
-    [focusItem],
+    [],
   );
+
+  // Clear the cancel flag reset on unmount so pending microtasks don't focus.
+  useEffect(() => {
+    cancelledRef.current = false;
+    return () => {
+      cancelledRef.current = true;
+    };
+  }, []);
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {

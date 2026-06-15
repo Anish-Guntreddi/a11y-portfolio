@@ -4,7 +4,6 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Menu } from './Menu';
 import { useRovingTabindex } from '../../hooks/useRovingTabindex';
-import { renderHook, act } from '@testing-library/react';
 
 // ── Test data ─────────────────────────────────────────────────────────────────
 
@@ -303,155 +302,164 @@ describe('Menu — Escape closes and returns focus to trigger', () => {
   });
 });
 
-// ── useRovingTabindex direct unit tests ───────────────────────────────────────
+// ── useRovingTabindex direct unit tests (N3) ──────────────────────────────────
+// These tests mount REAL focusable buttons, wire the refs returned by
+// getItemProps, dispatch real keyboard events, and assert BOTH:
+//   - tabindex attribute values across the list
+//   - document.activeElement follows the active index
 
-describe('useRovingTabindex', () => {
-  it('starts with initialIndex as active', () => {
-    const { result } = renderHook(() =>
-      useRovingTabindex({ count: 4, initialIndex: 0 }),
+describe('useRovingTabindex — real DOM assertions (N3)', () => {
+  /**
+   * Fixture that renders `count` buttons wired to useRovingTabindex.
+   * `disabledIndices` is forwarded to the hook (navigation-level disabled).
+   */
+  function RovingFixture({
+    count,
+    initialIndex = 0,
+    disabledIndices = [],
+  }: {
+    count: number;
+    initialIndex?: number;
+    disabledIndices?: number[];
+  }) {
+    const { getItemProps } = useRovingTabindex({ count, initialIndex, disabledIndices });
+    return (
+      <div>
+        {Array.from({ length: count }, (_, i) => {
+          const props = getItemProps(i);
+          return (
+            <button
+              key={i}
+              data-testid={`item-${i}`}
+              tabIndex={props.tabIndex}
+              ref={props.ref}
+              onKeyDown={props.onKeyDown}
+            >
+              Item {i}
+            </button>
+          );
+        })}
+      </div>
     );
-    expect(result.current.activeIndex).toBe(0);
+  }
+
+  it('starts with initialIndex tab-zero and others tab-negative-one', () => {
+    render(<RovingFixture count={4} initialIndex={1} />);
+    expect(screen.getByTestId('item-0')).toHaveAttribute('tabindex', '-1');
+    expect(screen.getByTestId('item-1')).toHaveAttribute('tabindex', '0');
+    expect(screen.getByTestId('item-2')).toHaveAttribute('tabindex', '-1');
+    expect(screen.getByTestId('item-3')).toHaveAttribute('tabindex', '-1');
   });
 
-  it('getItemProps returns tabIndex=0 for active item, -1 for others', () => {
-    const { result } = renderHook(() =>
-      useRovingTabindex({ count: 3, initialIndex: 1 }),
-    );
-    expect(result.current.getItemProps(0).tabIndex).toBe(-1);
-    expect(result.current.getItemProps(1).tabIndex).toBe(0);
-    expect(result.current.getItemProps(2).tabIndex).toBe(-1);
+  it('N1: when initialIndex is disabled, starts on next enabled item', () => {
+    // index 0 disabled → should start on index 1
+    render(<RovingFixture count={4} initialIndex={0} disabledIndices={[0]} />);
+    expect(screen.getByTestId('item-0')).toHaveAttribute('tabindex', '-1');
+    expect(screen.getByTestId('item-1')).toHaveAttribute('tabindex', '0');
   });
 
-  it('setActiveIndex updates activeIndex', () => {
-    const { result } = renderHook(() =>
-      useRovingTabindex({ count: 4, initialIndex: 0 }),
-    );
-    act(() => {
-      result.current.setActiveIndex(2);
-    });
-    expect(result.current.activeIndex).toBe(2);
+  it('ArrowDown moves tabindex=0 to next item AND focuses it', async () => {
+    const user = userEvent.setup();
+    render(<RovingFixture count={4} initialIndex={0} />);
+
+    // Focus the first item so keyboard events are dispatched on it.
+    screen.getByTestId('item-0').focus();
+    expect(document.activeElement).toBe(screen.getByTestId('item-0'));
+
+    await user.keyboard('{ArrowDown}');
+
+    // tabindex must have shifted
+    expect(screen.getByTestId('item-0')).toHaveAttribute('tabindex', '-1');
+    expect(screen.getByTestId('item-1')).toHaveAttribute('tabindex', '0');
+    // activeElement must follow
+    expect(document.activeElement).toBe(screen.getByTestId('item-1'));
   });
 
-  it('ArrowDown moves to next index', () => {
-    const { result } = renderHook(() =>
-      useRovingTabindex({ count: 4, initialIndex: 0 }),
-    );
-    const mockEvent = {
-      key: 'ArrowDown',
-      preventDefault: vi.fn(),
-    } as unknown as React.KeyboardEvent;
+  it('ArrowUp moves tabindex=0 to previous item AND focuses it', async () => {
+    const user = userEvent.setup();
+    render(<RovingFixture count={4} initialIndex={2} />);
 
-    act(() => {
-      result.current.getItemProps(0).onKeyDown(mockEvent);
-    });
-    expect(result.current.activeIndex).toBe(1);
-    expect(mockEvent.preventDefault).toHaveBeenCalled();
+    screen.getByTestId('item-2').focus();
+    await user.keyboard('{ArrowUp}');
+
+    expect(screen.getByTestId('item-1')).toHaveAttribute('tabindex', '0');
+    expect(screen.getByTestId('item-2')).toHaveAttribute('tabindex', '-1');
+    expect(document.activeElement).toBe(screen.getByTestId('item-1'));
   });
 
-  it('ArrowUp moves to previous index', () => {
-    const { result } = renderHook(() =>
-      useRovingTabindex({ count: 4, initialIndex: 2 }),
-    );
-    const mockEvent = {
-      key: 'ArrowUp',
-      preventDefault: vi.fn(),
-    } as unknown as React.KeyboardEvent;
+  it('ArrowDown wraps from last to first AND focuses first', async () => {
+    const user = userEvent.setup();
+    render(<RovingFixture count={3} initialIndex={2} />);
 
-    act(() => {
-      result.current.getItemProps(2).onKeyDown(mockEvent);
-    });
-    expect(result.current.activeIndex).toBe(1);
+    screen.getByTestId('item-2').focus();
+    await user.keyboard('{ArrowDown}');
+
+    expect(screen.getByTestId('item-0')).toHaveAttribute('tabindex', '0');
+    expect(screen.getByTestId('item-2')).toHaveAttribute('tabindex', '-1');
+    expect(document.activeElement).toBe(screen.getByTestId('item-0'));
   });
 
-  it('ArrowDown wraps from last to first', () => {
-    const { result } = renderHook(() =>
-      useRovingTabindex({ count: 3, initialIndex: 2 }),
-    );
-    const mockEvent = {
-      key: 'ArrowDown',
-      preventDefault: vi.fn(),
-    } as unknown as React.KeyboardEvent;
+  it('ArrowUp wraps from first to last AND focuses last', async () => {
+    const user = userEvent.setup();
+    render(<RovingFixture count={3} initialIndex={0} />);
 
-    act(() => {
-      result.current.getItemProps(2).onKeyDown(mockEvent);
-    });
-    expect(result.current.activeIndex).toBe(0);
+    screen.getByTestId('item-0').focus();
+    await user.keyboard('{ArrowUp}');
+
+    expect(screen.getByTestId('item-2')).toHaveAttribute('tabindex', '0');
+    expect(screen.getByTestId('item-0')).toHaveAttribute('tabindex', '-1');
+    expect(document.activeElement).toBe(screen.getByTestId('item-2'));
   });
 
-  it('ArrowUp wraps from first to last', () => {
-    const { result } = renderHook(() =>
-      useRovingTabindex({ count: 3, initialIndex: 0 }),
-    );
-    const mockEvent = {
-      key: 'ArrowUp',
-      preventDefault: vi.fn(),
-    } as unknown as React.KeyboardEvent;
+  it('ArrowDown skips disabled index AND focuses the skipped-over item', async () => {
+    const user = userEvent.setup();
+    // index 1 is disabled — ArrowDown from 0 should jump to 2
+    render(<RovingFixture count={4} initialIndex={0} disabledIndices={[1]} />);
 
-    act(() => {
-      result.current.getItemProps(0).onKeyDown(mockEvent);
-    });
-    expect(result.current.activeIndex).toBe(2);
+    screen.getByTestId('item-0').focus();
+    await user.keyboard('{ArrowDown}');
+
+    expect(screen.getByTestId('item-0')).toHaveAttribute('tabindex', '-1');
+    expect(screen.getByTestId('item-1')).toHaveAttribute('tabindex', '-1');
+    expect(screen.getByTestId('item-2')).toHaveAttribute('tabindex', '0');
+    expect(document.activeElement).toBe(screen.getByTestId('item-2'));
   });
 
-  it('Home jumps to first index', () => {
-    const { result } = renderHook(() =>
-      useRovingTabindex({ count: 4, initialIndex: 3 }),
-    );
-    const mockEvent = {
-      key: 'Home',
-      preventDefault: vi.fn(),
-    } as unknown as React.KeyboardEvent;
+  it('ArrowUp skips disabled index AND focuses the skipped-over item', async () => {
+    const user = userEvent.setup();
+    // index 2 is disabled — ArrowUp from 3 should jump to 1
+    render(<RovingFixture count={4} initialIndex={3} disabledIndices={[2]} />);
 
-    act(() => {
-      result.current.getItemProps(3).onKeyDown(mockEvent);
-    });
-    expect(result.current.activeIndex).toBe(0);
+    screen.getByTestId('item-3').focus();
+    await user.keyboard('{ArrowUp}');
+
+    expect(screen.getByTestId('item-3')).toHaveAttribute('tabindex', '-1');
+    expect(screen.getByTestId('item-2')).toHaveAttribute('tabindex', '-1');
+    expect(screen.getByTestId('item-1')).toHaveAttribute('tabindex', '0');
+    expect(document.activeElement).toBe(screen.getByTestId('item-1'));
   });
 
-  it('End jumps to last index', () => {
-    const { result } = renderHook(() =>
-      useRovingTabindex({ count: 4, initialIndex: 0 }),
-    );
-    const mockEvent = {
-      key: 'End',
-      preventDefault: vi.fn(),
-    } as unknown as React.KeyboardEvent;
+  it('Home jumps to first item AND focuses it', async () => {
+    const user = userEvent.setup();
+    render(<RovingFixture count={4} initialIndex={3} />);
 
-    act(() => {
-      result.current.getItemProps(0).onKeyDown(mockEvent);
-    });
-    expect(result.current.activeIndex).toBe(3);
+    screen.getByTestId('item-3').focus();
+    await user.keyboard('{Home}');
+
+    expect(screen.getByTestId('item-0')).toHaveAttribute('tabindex', '0');
+    expect(screen.getByTestId('item-3')).toHaveAttribute('tabindex', '-1');
+    expect(document.activeElement).toBe(screen.getByTestId('item-0'));
   });
 
-  it('skips disabled indices on ArrowDown', () => {
-    const { result } = renderHook(() =>
-      useRovingTabindex({ count: 4, initialIndex: 0, disabledIndices: [1] }),
-    );
-    const mockEvent = {
-      key: 'ArrowDown',
-      preventDefault: vi.fn(),
-    } as unknown as React.KeyboardEvent;
+  it('End jumps to last item AND focuses it', async () => {
+    const user = userEvent.setup();
+    render(<RovingFixture count={4} initialIndex={0} />);
 
-    act(() => {
-      result.current.getItemProps(0).onKeyDown(mockEvent);
-    });
-    // index 1 is disabled so it jumps to 2
-    expect(result.current.activeIndex).toBe(2);
-  });
+    screen.getByTestId('item-0').focus();
+    await user.keyboard('{End}');
 
-  it('skips disabled indices on ArrowUp', () => {
-    const { result } = renderHook(() =>
-      useRovingTabindex({ count: 4, initialIndex: 3, disabledIndices: [2] }),
-    );
-    const mockEvent = {
-      key: 'ArrowUp',
-      preventDefault: vi.fn(),
-    } as unknown as React.KeyboardEvent;
-
-    act(() => {
-      result.current.getItemProps(3).onKeyDown(mockEvent);
-    });
-    // index 2 is disabled so it jumps to 1
-    expect(result.current.activeIndex).toBe(1);
+    expect(screen.getByTestId('item-3')).toHaveAttribute('tabindex', '0');
+    expect(screen.getByTestId('item-0')).toHaveAttribute('tabindex', '-1');
+    expect(document.activeElement).toBe(screen.getByTestId('item-3'));
   });
 });

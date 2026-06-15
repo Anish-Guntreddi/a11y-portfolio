@@ -254,3 +254,33 @@ test('clicking inside dialog content does NOT close the modal', async ({ page })
   // Modal should still be open
   await expect(page.getByRole('dialog')).toBeVisible();
 });
+
+// ── Background inertness: Tab never reaches background content ─────────────────
+
+test('background content is inert while modal is open: Tab cycles only within dialog', async ({ page }) => {
+  await page.goto('/');
+
+  // Record a background button that is reachable before the modal opens.
+  const bgButton = page.getByRole('button', { name: /increment counter/i });
+  await expect(bgButton).toBeVisible();
+
+  // Open the modal.
+  await openModal(page);
+
+  // The background elements should now be inert. Tab 20 times — the background
+  // "Increment counter" button should never become activeElement.
+  for (let i = 0; i < 20; i++) {
+    await page.keyboard.press('Tab');
+    const activeIsBackground = await page.evaluate(() => {
+      const active = document.activeElement as HTMLElement | null;
+      if (!active) return false;
+      // If active element is inside the dialog, it is NOT a background element.
+      const dialog = document.querySelector('[role="dialog"]');
+      return dialog ? !dialog.contains(active) : true;
+    });
+    expect(
+      activeIsBackground,
+      `Tab press ${i + 1}: focus escaped the dialog into background content`,
+    ).toBe(false);
+  }
+});
